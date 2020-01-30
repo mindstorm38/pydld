@@ -29,7 +29,7 @@ class LockDelegate:
 
         self.dl = delegate  # Delegate Lock
         self.nm = name if isinstance(name, str) else None
-        self.id = binascii.hexlify(os.urandom(16)).hex()
+        self.id = binascii.hexlify(os.urandom(10)).hex()
         self.acqtime = 0    # Acquisition time
         self.dlck = False   # DeadLocked
 
@@ -130,8 +130,11 @@ def init_hook(only_named=False):
 
 
 def check_delegates():
+
     while True:
+
         curr_time = time.time()
+
         for deleg in delegates:
             if not deleg.dlck and deleg.is_deadlocked(curr_time):
 
