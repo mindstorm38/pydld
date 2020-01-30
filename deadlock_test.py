@@ -1,5 +1,5 @@
 import deadlock_detector
-deadlock_detector.init_hook()
+deadlock_detector.init_hook(only_named=True)
 deadlock_detector.start_checker()
 
 import threading
