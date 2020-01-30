@@ -1,2 +1,2 @@
 def route(callback, *args, **kwargs):
-    callback(*args, **kwargs)
+    return callback(*args, **kwargs)
