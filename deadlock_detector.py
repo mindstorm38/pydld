@@ -40,17 +40,18 @@ class LockDelegate:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.release()
 
+    def __getattr__(self, item):
+        return getattr(self.dl, item)
+
     def acquire(self, *args, **kwargs):
 
         self.acqtime = time.time()
-        self.acqroute(*args, **kwargs)
+        return self.acqroute(*args, **kwargs)
 
     def release(self, *args, **kwargs):
-        self.dl.release(*args, **kwargs)
-        self.acqtime = 0
 
-    def locked(self):
-        return self.dl.locked()  # Raise exception if this is not a basic Lock
+        self.acqtime = 0
+        return self.dl.release(*args, **kwargs)
 
     def is_deadlocked(self, curr_time: int):
         return self.acqtime != 0 and (curr_time - self.acqtime) > DEADLOCK_DETECTION_TIME
