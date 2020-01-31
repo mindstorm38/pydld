@@ -21,8 +21,8 @@ class LockDelegate:
     def __init__(self, delegate, name=None):
 
         self.dl = delegate  # Delegate Lock
-        self.nm = name if isinstance(name, str) else None
         self.id = binascii.hexlify(os.urandom(10)).hex()
+        self.nm = name if isinstance(name, str) else self.id
         self.acqtime = 0    # Acquisition time
         self.dlck = False   # DeadLocked
 
@@ -67,23 +67,29 @@ class LockDelegate:
         for thid, stack in sys._current_frames().items():
 
             if thread is None or thid != thread.ident:
+
                 frames = traceback.extract_stack(stack)
-                for t in traceback.extract_stack(stack):
+                frame_idx = 0
+
+                for t in frames:
+
                     if t.name == self.acqroute_name:
-                        final_frames = frames[:-2]
+                        final_frames = frames[0:(frame_idx-1)]  # TODO: Re-add [:-2] if needed
                         break
+
+                    frame_idx += 1
 
             if final_frames is not None:
                 break
 
         if final_frames is None:
-            print("=> This lock is not the waiting one, so no traceback can be found.")
+            print("->  This lock is not the waiting one, so no traceback can be found.")
         else:
 
             for filename, lineno, name, line in final_frames:
-                print("=> File: \"{}\", line {}, in {}".format(filename, lineno, name))
+                print("->  File: \"{}\", line {}, in {}".format(filename, lineno, name))
                 if line:
-                    print("=>   {}".format(line.strip()))
+                    print("->    {}".format(line.strip()))
 
         print(C_RESET)
 
@@ -92,6 +98,9 @@ class LockDelegate:
 
 
 def init_hook(only_named=False):
+
+    if "new_producer" in (threading.Lock.__name__, threading.RLock.__name__):
+        return
 
     def build_producer(old):
         def new_producer(*, name=None):
