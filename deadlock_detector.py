@@ -16,13 +16,16 @@ C_YELLOW = u"\u001b[33m"
 C_RESET = "\u001b[0m"
 
 
+print_func = print
+
+
 class LockDelegate:
 
     def __init__(self, delegate, name=None):
 
         self.dl = delegate  # Delegate Lock
-        self.nm = name if isinstance(name, str) else None
         self.id = binascii.hexlify(os.urandom(10)).hex()
+        self.nm = name if isinstance(name, str) else self.id
         self.acqtime = 0    # Acquisition time
         self.dlck = False   # DeadLocked
 
@@ -58,40 +61,49 @@ class LockDelegate:
 
     def print_deadlock_info(self):
 
-        print(C_RED)
-        print("DeadLock detected for lock named '{}'...".format(self.nm))
-        print(C_YELLOW, end="")
+        print_func(C_RED)
+        print_func("DeadLock detected for lock named '{}'...".format(self.nm))
+        print_func(C_YELLOW, end="")
 
         final_frames = None
 
         for thid, stack in sys._current_frames().items():
 
             if thread is None or thid != thread.ident:
+
                 frames = traceback.extract_stack(stack)
-                for t in traceback.extract_stack(stack):
+                frame_idx = 0
+
+                for t in frames:
+
                     if t.name == self.acqroute_name:
-                        final_frames = frames[:-2]
+                        final_frames = frames[0:(frame_idx-1)]  # TODO: Re-add [:-2] if needed
                         break
+
+                    frame_idx += 1
 
             if final_frames is not None:
                 break
 
         if final_frames is None:
-            print("=> This lock is not the waiting one, so no traceback can be found.")
+            print_func("->  This lock is not the waiting one, so no traceback can be found.")
         else:
 
             for filename, lineno, name, line in final_frames:
-                print("=> File: \"{}\", line {}, in {}".format(filename, lineno, name))
+                print_func("->  File: \"{}\", line {}, in {}".format(filename, lineno, name))
                 if line:
-                    print("=>   {}".format(line.strip()))
+                    print_func("->    {}".format(line.strip()))
 
-        print(C_RESET)
+        print_func(C_RESET)
 
     def __repr__(self):
         return "DeadLockDetector({}, id:{}, deadlocked:{})".format(self.nm, self.id, self.dlck)
 
 
 def init_hook(only_named=False):
+
+    if "new_producer" in (threading.Lock.__name__, threading.RLock.__name__):
+        return
 
     def build_producer(old):
         def new_producer(*, name=None):
