@@ -15,8 +15,25 @@ if __name__ == '__main__':
         print("Main tick ...")
 
         with l1:
+            print("L1 acquired")
             with l2:
+                print("L2 acquired")
                 with l1:
+                    print("L1 acquired")
                     pass
+
+        """with l1:
+            print("L1 acquired")
+            with l1:
+                print("L1 acquired")"""
+
+        """
+        l1.acquire()
+        l2.acquire()
+        l1.acquire()
+        l1.release()
+        l2.release()
+        l1.release()
+        """
 
         time.sleep(1)

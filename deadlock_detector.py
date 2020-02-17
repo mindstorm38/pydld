@@ -1,6 +1,5 @@
 import traceback
 import threading
-import binascii
 import time
 import sys
 import os
@@ -13,7 +12,8 @@ thread = None
 
 C_RED = u"\u001b[31m"
 C_YELLOW = u"\u001b[33m"
-C_RESET = "\u001b[0m"
+C_GREEN = u"\u001b[32m"
+C_RESET = u"\u001b[0m"
 
 
 print_func = print
@@ -24,7 +24,7 @@ class LockDelegate:
     def __init__(self, delegate, name=None):
 
         self.dl = delegate  # Delegate Lock
-        self.id = binascii.hexlify(os.urandom(10)).hex()
+        self.id = os.urandom(10).hex()
         self.nm = name if isinstance(name, str) else self.id
         self.acqtime = 0    # Acquisition time
         self.dlck = False   # DeadLocked
@@ -63,31 +63,32 @@ class LockDelegate:
 
         print_func(C_RED)
         print_func("DeadLock detected for lock named '{}'...".format(self.nm))
-        print_func(C_YELLOW, end="")
 
         final_frames = None
+        final_thread = None
 
         for thid, stack in sys._current_frames().items():
 
             if thread is None or thid != thread.ident:
 
                 frames = traceback.extract_stack(stack)
-                frame_idx = 0
 
                 for t in frames:
 
                     if t.name == self.acqroute_name:
-                        final_frames = frames[0:(frame_idx-1)]  # TODO: Re-add [:-2] if needed
-                        break
 
-                    frame_idx += 1
+                        final_frames = frames[:-2]
+                        final_thread = next((th for th in threading.enumerate() if th.ident == thid))
+                        break
 
             if final_frames is not None:
                 break
 
         if final_frames is None:
-            print_func("->  This lock is not the waiting one, so no traceback can be found.")
+            print_func("{}->  This lock is not the waiting one, so no traceback can be found.".format(C_YELLOW))
         else:
+
+            print_func("{}-> Locked in thread '{}'{}".format(C_GREEN, final_thread, C_YELLOW))
 
             for filename, lineno, name, line in final_frames:
                 print_func("->  File: \"{}\", line {}, in {}".format(filename, lineno, name))
