@@ -1,4 +1,4 @@
-import deadlock_detector
+"""import deadlock_detector
 deadlock_detector.init_hook(only_named=True)
 deadlock_detector.start_checker()
 
@@ -22,18 +22,34 @@ if __name__ == '__main__':
                     print("L1 acquired")
                     pass
 
-        """with l1:
+        with l1:
             print("L1 acquired")
             with l1:
-                print("L1 acquired")"""
+                print("L1 acquired")
 
-        """
         l1.acquire()
         l2.acquire()
         l1.acquire()
         l1.release()
         l2.release()
         l1.release()
-        """
 
         time.sleep(1)
+"""
+
+import deadlock_detector_new
+import threading
+
+if __name__ == "__main__":
+
+    deadlock_detector_new.init()
+
+    l1 = threading.Lock()
+    l2 = threading.Lock()
+
+    l1.acquire()
+    l2.acquire()
+    l1.acquire()
+    l2.release()
+    l1.release()
+
